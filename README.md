@@ -81,6 +81,24 @@ The **Make a GIF gift** shortcut prioritizes a 320-pixel short animation for pra
 
 A true **30-second name → GIF → WhatsApp** acceptance test still requires observation with a real user and a real phone, not just a headless timing test.
 
+## Mission 05 — Make it feel magical
+
+The **Drawing** tab now contains two explicitly labeled previews: your unchanged input sketch and a forward-rendered reflected-light preview. **Automatically mirror drawing** is enabled for new sketches; it reverses sampled target coordinates exactly once to compensate for the live scene's viewing direction, without altering the input canvas or the reflection law. Unchecking the option retains the legacy target orientation. The `mirrorDrawing` Boolean is an optional field in **project format v1**, defaulting to `false` for existing files and shared links.
+
+**Share RAYMOSAIC ❤️** opens a separate, privacy-conscious dialog for the **public website URL**. Native app sharing (when supported), WhatsApp, Facebook, X, email, a user-selected Mastodon instance, and copy link are available through explicit clicks. This is distinct from **Share my creation**, which copies a compressed personal-project fragment and reveals that motif to its recipients, and from **Export & Share GIF**, which produces a local animation file. The public share dialog never reads or transmits the current sketch.
+
+Mobile framing now places the optical stage beneath the intro text and adjusts camera target, distance and focal scale independently for portrait and short landscape viewports. A user-adjusted or loaded camera is not overridden by later orientation changes. The fixed toolbar respects safe areas and the document provides sufficient bottom space for form controls.
+
+The GIF polish branch `polish-raymosaic-gif-export-20261017` is integrated, not replaced: projection-only exports have a quiet dark studio backdrop, scene GIFs omit distracting grid effects, and the small **RAYMOSAIC** signature can be switched off in the existing export dialog. No video export is advertised.
+
+### Verification and device limits
+
+`node --test tests/optics.test.mjs tests/project-state.test.mjs tests/mission05.test.mjs` covers legacy project compatibility, asymmetric target orientation, real forward reflection, sharing privacy and Mastodon hostname validation.
+
+`node tests/browser-smoke.mjs` exercises Firefox/Chromium GIF formats, both branding states, PNG and project roundtrips. `node tests/mission05-browser.mjs` checks asymmetric drawing, local restoration, public sharing, translations and simulated 360×740, 390×844 and 844×390 viewports. `python3 tests/check-browser-exports.py` independently decodes generated media.
+
+**A desktop browser with an emulated phone viewport is not a physical Android or iPhone.** Dennis has tested the app on his own Android smartphone; these automated tests do not claim to reproduce his device. An actual iOS and native messenger handoff test remains a manual release-quality check.
+
 ## The physics, not a hidden texture
 
 The target image is sampled into discrete points. An **inverse solver** computes a suitable orientation for each mirror; it is then deliberately kept separate from the **forward projection**. The forward renderer sees mirror geometry and the lamp — **not the original drawing or text**.
