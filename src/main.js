@@ -162,11 +162,10 @@ function createFrameBuffer(c,frameContext,idx,total,mode,includeSignature,state)
  const incoming=multi&&step.index>0?frames[step.index-1]:null;
  const chosen=frames[step.index],reflectors=incoming&&step.alpha<1?interpolateMirrorArrays(incoming,chosen,easeAlign(step.alpha)):chosen;
  const t=idx/total,opts={width:c.width,height:c.height,align:multi?(step.index===0?step.alpha:1):cycleAlign(t),time:t*5,ice:state.ice,selected:-1,rays:false,showLabels:false,low:mode==='projection'};
- if(mode==='projection')drawProjectionOnly(frameContext,scene,reflectors,state.light,{...opts,reverseView:state.reverseView});
- else{const original=scene.camera;
-  const portrait=c.width<c.height,landscape=c.width>c.height;
-  scene.camera={...state.camera,target:portrait?[5,3,0]:landscape?[2,2.8,0]:[4.5,3,0],distance:portrait?17.5:landscape?19:15};
-  drawScene(frameContext,scene,reflectors,state.light,{...opts,exportClean:true});scene.camera=original;}
+ if(mode==='projection')drawProjectionOnly(frameContext,scene,reflectors,state.light,{...opts,reverseView:state.reverseView,framing:state.framing});
+ else{const original=scene.camera;scene.camera=state.exportCamera;
+  try{drawScene(frameContext,scene,reflectors,state.light,{...opts,exportClean:true});}
+  finally{scene.camera=original;}}
  if(includeSignature)drawExportSignature(frameContext,c.width,c.height);
  return frameContext.getImageData(0,0,c.width,c.height).data.buffer;
 }
@@ -176,7 +175,12 @@ $('startExport').addEventListener('click',async()=>{
  let plan;try{plan=exportSequencePlan(Math.max(1,sceneMirrors.length),Number($('duration').value),quality);}catch(e){toast(t('sequenceTooLong')+' '+e.message);return;}
  resetPreviousExport();exporting=true;$('startExport').disabled=true;
  const {fps,total}=plan,mode=$('projectionOnly').checked?'projection':'scene',includeSignature=$('brandGif').checked;
- const exportState={scenes:sceneMirrors.length?sceneMirrors.slice():[mirrors],light:[...light],ice,reverseView:motifKind==='draw'&&$('mirrorDrawing').checked||motifKind==='text'&&$('mirrorText').checked,camera:{...scene.camera}};
+ const exportScenes=sceneMirrors.length?sceneMirrors.slice():[mirrors];
+ const exportBounds=projectionBounds(exportScenes,light);
+ const exportState={scenes:exportScenes,light:[...light],ice,
+  reverseView:motifKind==='draw'&&$('mirrorDrawing').checked||motifKind==='text'&&$('mirrorText').checked,
+  framing:projectionFraming(exportBounds,width,height),
+  exportCamera:exportCamera(exportBounds,width,height,{...scene.camera})};
  const bufferCanvas=document.createElement('canvas');bufferCanvas.width=width;bufferCanvas.height=height;
  const frameCtx=bufferCanvas.getContext('2d',{willReadFrequently:true});
  const prog=$('exportProgress'),status=$('progressStatus'),fill=$('progressFill'),pct=$('progressPct');prog.classList.remove('hidden');status.textContent='Encoding animation…';fill.style.width='0%';pct.textContent='0%';
