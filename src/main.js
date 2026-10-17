@@ -1,21 +1,57 @@
-import {DEFAULT_LIGHT,createArray,aimMirrors,projectMirror,withinWall,WALL} from './optics.mjs';
+import {DEFAULT_LIGHT,createArray,aimMirrors,projectMirror,withinWall,WALL,lerpNormal} from './optics.mjs';
 import {makeTargetCanvas,paintTarget,sampleTarget,orientDrawingTargets} from './targets.js';
 import {publicPageUrl,publicShareText,shareServiceUrl,mastodonShareUrl} from './public-share.js';
 import {createScene,drawScene,drawProjectionOnly,drawExportSignature,easeAlign,cycleAlign,projectPoint} from './scene.js';
 import {captureDrawing,restoreDrawing,validateProject,saveLocal,loadLocal,parseProject,projectFile,makeShareHash,projectFromHash} from './project-state.js';
 import {language,t,applyLanguage} from './i18n.js';
+import {buildMessageScenes,messageLength,opticalCapacity,exportSequencePlan,sequenceFrame,MAX_MESSAGE_GRAPHEMES} from './message-sequence.mjs';
 const $=id=>document.getElementById(id);
 const canvas=$('scene'),context=canvas.getContext('2d',{alpha:false});
-const scene=createScene(),baseMirrors=createArray(28,16),targetCanvas=makeTargetCanvas();
+const scene=createScene(),targetCanvas=makeTargetCanvas();let mirrorCount=448,baseMirrors=createArray(28,16),messageScenes=[],sceneMirrors=[],sceneIndex=0,sequencePlaying=false,sceneEntered=0,transitionSource=null;
 let light=[...DEFAULT_LIGHT],targets=[],mirrors=[],preset='heart',ice=false,showRays=false,selected=-1,lightDirty=false;
 let introStart=performance.now(),introForce=false,renderWidth=0,renderHeight=0,movingCamera=false;
 let messageTimer=0,exportWorker=null,exporting=false,exportBlob=null,exportUrl=null;
 let motifKind='heart',motifText='',aimLight=[...DEFAULT_LIGHT],restoring=false,autoSaveTimer=0,booting=true,cameraTouched=false,layoutMode='';
 $('mirrorCount').textContent=`${baseMirrors.length} MIRRORS`;
 function toast(message){const t=$('toast');t.textContent=message;t.classList.remove('hidden');clearTimeout(messageTimer);messageTimer=setTimeout(()=>t.classList.add('hidden'),3200);}
-function setTargets(kind,text){motifKind=kind;motifText=kind==='text'?String(text||'HELLO').slice(0,13):'';aimLight=[...light];paintTarget(targetCanvas,kind,text);targets=orientDrawingTargets(sampleTarget(targetCanvas,baseMirrors.length),kind==='draw'&&$('mirrorDrawing').checked);mirrors=aimMirrors(baseMirrors,light,targets);selected=-1;$('inspector').classList.add('hidden');lightDirty=false;$('recalculate').disabled=true;
- introStart=performance.now();introForce=true;$('motto').textContent=kind==='heart'?'A HEART MADE OF REFLECTIONS':kind==='text'?`YOUR MESSAGE, IN LIGHT`:'EVERY SPOT IS A REFLECTION';
- $('opticsMessage').textContent=t('optics');renderProjectionPreview();scheduleAutoSave();
+function opticsFor(kind,value,source=light){
+ paintTarget(targetCanvas,kind,value);
+ const flipped=kind==='draw'?$('mirrorDrawing').checked:kind==='text'&&$('mirrorText').checked;
+ const sample=orientDrawingTargets(sampleTarget(targetCanvas,baseMirrors.length),flipped);
+ return {sample,mirrors:aimMirrors(baseMirrors,source,sample)};
+}
+function renderSequenceControls(){
+ const multi=motifKind==='text'&&messageScenes.length>1;
+ $('sequenceEditor').hidden=!multi;
+ $('messagePreview').textContent=motifText;
+ $('sequenceStatus').textContent=multi?`${sceneIndex+1} / ${messageScenes.length}`:'';
+ $('toggleSequence').textContent=sequencePlaying?(language==='de'?'Pause':'Pause'):(language==='de'?'Abspielen':'Play');
+ const holder=$('sceneList');holder.replaceChildren();
+ if(multi)messageScenes.forEach((segment,i)=>{
+   const button=document.createElement('button');button.type='button';button.textContent=`${i+1} · ${segment}`;
+   button.setAttribute('aria-current',String(i===sceneIndex));button.addEventListener('click',()=>showMessageScene(i,false));
+   holder.append(button);
+ });
+}
+function showMessageScene(index,auto=true){
+ if(index<0||index>=messageScenes.length||!sceneMirrors.length)return;
+ transitionSource=mirrors;sceneIndex=index;mirrors=sceneMirrors[index];sceneEntered=performance.now();
+ sequencePlaying=auto&&messageScenes.length>1;
+ renderSequenceControls();renderProjectionPreview();scheduleAutoSave();
+}
+function setTargets(kind,text){
+ motifKind=kind;motifText=kind==='text'?String(text||'HELLO'):'';aimLight=[...light];
+ messageScenes=kind==='text'?buildMessageScenes(motifText,opticalCapacity(mirrorCount)):[];
+ sceneIndex=0;sequencePlaying=messageScenes.length>1;sceneEntered=performance.now();transitionSource=null;
+ if(kind==='text'){
+   sceneMirrors=messageScenes.map(segment=>opticsFor('text',segment).mirrors);
+   const first=opticsFor('text',messageScenes[0]||'HELLO');targets=first.sample;mirrors=sceneMirrors[0]||first.mirrors;
+ }else{
+   const result=opticsFor(kind,text);targets=result.sample;mirrors=result.mirrors;sceneMirrors=[];
+ }
+ selected=-1;$('inspector').classList.add('hidden');lightDirty=false;$('recalculate').disabled=true;
+ introStart=performance.now();introForce=true;$('motto').textContent=kind==='heart'?'A HEART MADE OF REFLECTIONS':kind==='text'?'YOUR MESSAGE, IN LIGHT':'EVERY SPOT IS A REFLECTION';
+ $('opticsMessage').textContent=t('optics');renderSequenceControls();renderProjectionPreview();scheduleAutoSave();
 }
 setTargets('heart');booting=false;
 function renderProjectionPreview(){
@@ -38,23 +74,30 @@ function responsiveCamera(){
 function resize(){responsiveCamera();const rect=canvas.getBoundingClientRect();const dpr=Math.min(window.devicePixelRatio||1,1.35);renderWidth=Math.max(1,Math.round(rect.width*dpr));renderHeight=Math.max(1,Math.round(rect.height*dpr));if(canvas.width!==renderWidth||canvas.height!==renderHeight){canvas.width=renderWidth;canvas.height=renderHeight;}}
 const reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)');
 function currentAlign(now){if(reduceMotion.matches)return 1;const t=Math.min(1,(now-introStart)/2600);return easeAlign(t);}
-let lastFrame=0;function tick(now){if(now-lastFrame<32){requestAnimationFrame(tick);return;}lastFrame=now;resize();const align=currentAlign(now);drawScene(context,scene,mirrors,light,{width:renderWidth,height:renderHeight,align,time:reduceMotion.matches?0:now/1000,rays:showRays,selected,ice,showLabels:!window.matchMedia('(max-width:680px)').matches});requestAnimationFrame(tick);}
+let lastFrame=0;function tick(now){if(now-lastFrame<32){requestAnimationFrame(tick);return;}lastFrame=now;resize();const align=currentAlign(now);if(sequencePlaying&&messageScenes.length>1&&now-sceneEntered>=3000)showMessageScene((sceneIndex+1)%messageScenes.length,true);const mix=transitionSource?Math.min(1,(now-sceneEntered)/700):1;const rendered=transitionSource&&mix<1?interpolateMirrorArrays(transitionSource,mirrors,easeAlign(mix)):mirrors;drawScene(context,scene,rendered,light,{width:renderWidth,height:renderHeight,align:transitionSource?1:align,time:reduceMotion.matches?0:now/1000,rays:showRays,selected,ice,showLabels:!window.matchMedia('(max-width:680px)').matches});requestAnimationFrame(tick);}
 requestAnimationFrame(tick);
+function interpolateMirrorArrays(from,to,t){return to.map((m,i)=>({...m,normal:lerpNormal(from[i]?.normal||[0,1,0],m.normal,t)}));}
 function updatePresetButtons(name){document.querySelectorAll('[data-preset]').forEach(b=>{b.classList.toggle('selected',b.dataset.preset===name);});}
 function selectTab(tab){document.querySelectorAll('.tab').forEach(b=>{const active=b.dataset.tab===tab;b.classList.toggle('active',active);b.setAttribute('aria-selected',String(active));});
  for(const t of ['presets','text','draw'])$(t+'Tab').classList.toggle('hidden',t!==tab);}
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>selectTab(b.dataset.tab)));
 document.querySelectorAll('[data-preset]').forEach(b=>b.addEventListener('click',()=>{const name=b.dataset.preset;preset=name;updatePresetButtons(name);setTargets(name==='hello'?'text':name,'HELLO');}));
-$('applyText').addEventListener('click',()=>{const value=$('customText').value.trim();if(!value){toast(t('invalid'));return;}preset='custom';updatePresetButtons('none');setTargets('text',value);});
+$('applyText').addEventListener('click',()=>{const value=$('customText').value;if(!value.trim()){toast(t('invalid'));return;}if(messageLength(value)>MAX_MESSAGE_GRAPHEMES){toast(t('textTooLong'));return;}preset='custom';updatePresetButtons('none');setTargets('text',value);});
+$('customText').addEventListener('input',()=>{$('characterCount').textContent=`${messageLength($('customText').value)} / ${MAX_MESSAGE_GRAPHEMES}`;});
+$('mirrorText').addEventListener('change',()=>{if(motifKind==='text')setTargets('text',motifText);else scheduleAutoSave();});
+$('prevScene').addEventListener('click',()=>showMessageScene((sceneIndex+messageScenes.length-1)%messageScenes.length,false));
+$('nextScene').addEventListener('click',()=>showMessageScene((sceneIndex+1)%messageScenes.length,false));
+$('toggleSequence').addEventListener('click',()=>{sequencePlaying=!sequencePlaying;sceneEntered=performance.now();renderSequenceControls();});
+$('mirrorDensity').addEventListener('change',()=>{const count=Number($('mirrorDensity').value);if(![448,666].includes(count))return;mirrorCount=count;baseMirrors=count===666?createArray(37,18):createArray(28,16);$('mirrorCount').textContent=`${count} MIRRORS`;setTargets(motifKind,motifKind==='draw'?draw:motifKind==='text'?motifText:undefined);toast(count===666?t('loveMirrors'):t('classicMirrors'));});
 $('quickGif').addEventListener('click',()=>{if(!$('customText').value.trim()){toast(t('invalid'));return;}$('applyText').click();$('quality').value='compact';$('duration').value='3';$('shareGif').click();$('startExport').click();});
-$('customText').addEventListener('keydown',e=>{if(e.key==='Enter')$('applyText').click();});
-$('replay').addEventListener('click',()=>{introStart=performance.now();toast(t('replay'));});
+$('customText').addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter')$('applyText').click();});
+$('replay').addEventListener('click',()=>{introStart=performance.now();if(messageScenes.length>1)showMessageScene(0,true);toast(t('replay'));});
 $('showRays').addEventListener('change',e=>{showRays=e.target.checked;scheduleAutoSave();});
 $('coolLight').addEventListener('change',e=>{ice=e.target.checked;renderProjectionPreview();scheduleAutoSave();});
 for(const [id,i] of [['lightX',0],['lightY',1],['lightZ',2]])$(id).addEventListener('input',e=>{light[i]=Number(e.target.value);lightDirty=true;$('recalculate').disabled=false;$('lightCoordinates').textContent=light.map(x=>x.toFixed(1)).join(' / ');
  renderProjectionPreview();$('opticsMessage').textContent='The mirrors are still aiming at the old source. Watch the image shift, then recalculate.';$('motto').textContent='THE LIGHT MOVED. THE PHYSICS FOLLOWED.';scheduleAutoSave();});
-$('recalculate').addEventListener('click',()=>{mirrors=aimMirrors(baseMirrors,light,targets);aimLight=[...light];lightDirty=false;$('recalculate').disabled=true;introStart=performance.now();renderProjectionPreview();scheduleAutoSave();$('opticsMessage').textContent='Normals recalculated for the new light source.';toast('Mirrors recalculated from the reflection law');});
-$('reset').addEventListener('click',()=>{light=[...DEFAULT_LIGHT];$('lightX').value=String(light[0]);$('lightY').value=String(light[1]);$('lightZ').value=String(light[2]);$('lightCoordinates').textContent=light.map(x=>x.toFixed(1)).join(' / ');scene.camera=createScene().camera;cameraTouched=false;layoutMode='';
+$('recalculate').addEventListener('click',()=>{if(motifKind==='text'){sceneMirrors=messageScenes.map(s=>opticsFor('text',s,light).mirrors);mirrors=sceneMirrors[sceneIndex];}else mirrors=aimMirrors(baseMirrors,light,targets);aimLight=[...light];lightDirty=false;$('recalculate').disabled=true;introStart=performance.now();renderProjectionPreview();scheduleAutoSave();$('opticsMessage').textContent='Normals recalculated for the new light source.';toast('Mirrors recalculated from the reflection law');});
+$('reset').addEventListener('click',()=>{light=[...DEFAULT_LIGHT];$('lightX').value=String(light[0]);$('lightY').value=String(light[1]);$('lightZ').value=String(light[2]);$('lightCoordinates').textContent=light.map(x=>x.toFixed(1)).join(' / ');scene.camera=createScene().camera;cameraTouched=false;layoutMode='';mirrorCount=448;baseMirrors=createArray(28,16);$('mirrorDensity').value='448';$('mirrorCount').textContent='448 MIRRORS';$('mirrorText').checked=true;
  $('showRays').checked=false;showRays=false;$('coolLight').checked=false;ice=false;preset='heart';updatePresetButtons('heart');selectTab('presets');setTargets('heart');scheduleAutoSave();toast('Instrument reset');});
 // Orbit camera by dragging the scene; inspect a facet with a click.
 let pointer=null;
