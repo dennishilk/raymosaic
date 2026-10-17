@@ -1,0 +1,48 @@
+// Headless Linux Chromium/Firefox smoke run. Requires playwright and installed browsers.
+import {chromium,firefox} from 'playwright';
+import {mkdir,writeFile} from 'node:fs/promises';
+import {join} from 'node:path';
+const root='http://127.0.0.1:8000/';
+const dest='tests/artifacts';
+await mkdir(dest,{recursive:true});
+const report=[];
+for(const [name,engine] of [['chromium',chromium],['firefox',firefox]]){
+  const browser=await engine.launch({headless:true});
+  const context=await browser.newContext({viewport:{width:1280,height:800},acceptDownloads:true});
+  const page=await context.newPage();
+  const errors=[];
+  page.on('pageerror',e=>errors.push(e.message));
+  try{
+    await page.goto(root,{waitUntil:'domcontentloaded'});
+    await page.locator('#customText').fill('LUNA');
+    const start=Date.now();
+    await page.locator('#quickGif').click();
+    await page.locator('#downloadGif').waitFor({state:'visible',timeout:180000});
+    const seconds=(Date.now()-start)/1000;
+    const label=await page.locator('#exportSize').textContent();
+    let got=page.waitForEvent('download',{timeout:30000});
+    await page.locator('#downloadGif').click();
+    await (await got).saveAs(join(dest,name+'.gif'));
+    await page.locator('#closeExport').click();
+    got=page.waitForEvent('download',{timeout:30000});
+    await page.locator('#savePng').click();
+    await (await got).saveAs(join(dest,name+'.png'));
+    got=page.waitForEvent('download',{timeout:30000});
+    await page.locator('#downloadProject').click();
+    await (await got).saveAs(join(dest,name+'.raymosaic'));
+    await page.locator('#saveProject').click();
+    await page.reload({waitUntil:'domcontentloaded'});
+    await page.locator('#loadLocal').click();
+    const restored=await page.locator('#customText').inputValue();
+    if(restored!=='LUNA')throw Error('Project restore lost the text: '+restored);
+    await page.goto(root+'?lang=de',{waitUntil:'domcontentloaded'});
+    if(!((await page.locator('.tagline h1').innerText()).includes('Zeichne')))throw Error('German locale did not load');
+    await page.setViewportSize({width:390,height:844});
+    const fit=await page.evaluate(()=>({scroll:document.documentElement.scrollWidth,viewport:innerWidth}));
+    if(fit.scroll>fit.viewport+2)throw Error('Mobile horizontal overflow: '+JSON.stringify(fit));
+    if(errors.length)throw Error('Browser JavaScript errors: '+errors.join('; '));
+    report.push({browser:name,automatedGifSeconds:seconds,gif:label,restored:true,german:true,mobileViewportNoOverflow:true,deviceTested:false});
+    console.log(name+' automated name→GIF: '+seconds.toFixed(2)+'s, '+label+'; project/DE/mobile checks passed');
+  }finally{await context.close();await browser.close();}
+}
+await writeFile(join(dest,'report.json'),JSON.stringify(report,null,2)+'\n');
