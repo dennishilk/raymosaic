@@ -9,14 +9,14 @@ const scene=createScene(),baseMirrors=createArray(28,16),targetCanvas=makeTarget
 let light=[...DEFAULT_LIGHT],targets=[],mirrors=[],preset='heart',ice=false,showRays=false,selected=-1,lightDirty=false;
 let introStart=performance.now(),introForce=false,renderWidth=0,renderHeight=0,movingCamera=false;
 let messageTimer=0,exportWorker=null,exporting=false,exportBlob=null,exportUrl=null;
-let motifKind='heart',motifText='',aimLight=[...DEFAULT_LIGHT],restoring=false,autoSaveTimer=0;
+let motifKind='heart',motifText='',aimLight=[...DEFAULT_LIGHT],restoring=false,autoSaveTimer=0,booting=true;
 $('mirrorCount').textContent=`${baseMirrors.length} MIRRORS`;
 function toast(message){const t=$('toast');t.textContent=message;t.classList.remove('hidden');clearTimeout(messageTimer);messageTimer=setTimeout(()=>t.classList.add('hidden'),3200);}
 function setTargets(kind,text){motifKind=kind;motifText=kind==='text'?String(text||'HELLO').slice(0,13):'';aimLight=[...light];paintTarget(targetCanvas,kind,text);targets=sampleTarget(targetCanvas,baseMirrors.length);mirrors=aimMirrors(baseMirrors,light,targets);selected=-1;$('inspector').classList.add('hidden');lightDirty=false;$('recalculate').disabled=true;
  introStart=performance.now();introForce=true;$('motto').textContent=kind==='heart'?'A HEART MADE OF REFLECTIONS':kind==='text'?`YOUR MESSAGE, IN LIGHT`:'EVERY SPOT IS A REFLECTION';
  $('opticsMessage').textContent=t('optics');scheduleAutoSave();
 }
-setTargets('heart');
+setTargets('heart');booting=false;
 function resize(){const rect=canvas.getBoundingClientRect();const dpr=Math.min(window.devicePixelRatio||1,1.35);renderWidth=Math.max(1,Math.round(rect.width*dpr));renderHeight=Math.max(1,Math.round(rect.height*dpr));if(canvas.width!==renderWidth||canvas.height!==renderHeight){canvas.width=renderWidth;canvas.height=renderHeight;}}
 const reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)');
 function currentAlign(now){if(reduceMotion.matches)return 1;const t=Math.min(1,(now-introStart)/2600);return easeAlign(t);}
@@ -28,7 +28,7 @@ function selectTab(tab){document.querySelectorAll('.tab').forEach(b=>{const acti
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>selectTab(b.dataset.tab)));
 document.querySelectorAll('[data-preset]').forEach(b=>b.addEventListener('click',()=>{const name=b.dataset.preset;preset=name;updatePresetButtons(name);setTargets(name==='hello'?'text':name,'HELLO');}));
 $('applyText').addEventListener('click',()=>{const value=$('customText').value.trim();if(!value){toast(t('invalid'));return;}preset='custom';updatePresetButtons('none');setTargets('text',value);});
-$('quickGif').addEventListener('click',()=>{if(!$('customText').value.trim()){toast(t('invalid'));return;}$('applyText').click();$('shareGif').click();$('startExport').click();});
+$('quickGif').addEventListener('click',()=>{if(!$('customText').value.trim()){toast(t('invalid'));return;}$('applyText').click();$('quality').value='compact';$('duration').value='3';$('shareGif').click();$('startExport').click();});
 $('customText').addEventListener('keydown',e=>{if(e.key==='Enter')$('applyText').click();});
 $('replay').addEventListener('click',()=>{introStart=performance.now();toast(t('replay'));});
 $('showRays').addEventListener('change',e=>{showRays=e.target.checked;scheduleAutoSave();});
@@ -119,7 +119,7 @@ function snapshot(){
   ice,rays:showRays,normals:mirrors.map(m=>m.normal.map(n=>Math.round(n*1e8)/1e8))});
 }
 function scheduleAutoSave(){
- if(restoring)return;
+ if(restoring||booting)return;
  clearTimeout(autoSaveTimer);
  autoSaveTimer=setTimeout(()=>{try{saveLocal(snapshot());}catch(e){console.warn('RAYMOSAIC local save failed:',e.message);}},700);
 }
