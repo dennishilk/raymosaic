@@ -42,6 +42,7 @@ for(const [name,engine] of [['chromium',chromium],['firefox',firefox]]){
     await (await got).saveAs(join(dest,name+'.png'));
     got=page.waitForEvent('download',{timeout:30000});
     await page.locator('#downloadProject').click();
+    console.log('project download diagnosis:',await page.locator('#toast').textContent(),'page errors:',errors);
     await (await got).saveAs(join(dest,name+'.raymosaic'));
     await page.locator('#saveProject').click();
     await page.reload({waitUntil:'domcontentloaded'});
