@@ -119,6 +119,27 @@ The GIF polish branch `polish-raymosaic-gif-export-20261017` is integrated, not 
 
 One automated sample produced **17 stages and 304 GIF frames at 320×320 pixels** in each tested Linux browser. This is a software QA observation, not a guarantee about phone performance. Desktop browser viewport emulation is **not** a physical Android or iOS test. High-detail 1024 mirrors is optional and was intentionally not implemented pending performance measurements. Browser font availability affects emoji glyphs; the complete text remains preserved even when a glyph cannot render.
 
+## Mission 07 — Optical OVERDRIVE 🚀
+
+Exactly three official choices: **448 mirrors · Classic** (28×16), **666 mirrors · DOOM of Love ❤️** (37×18), **1337 mirrors · OVERDRIVE 🚀** (51×27 lattice with 40 intentionally empty corner positions). The last mode has **exactly 1337** separate facet geometries, normals, forward ray tests, and selectable IDs; no rendered spot is duplicated or substituted.
+
+### Export composition
+
+The GIF exporter now computes the **actual forward intersection** of each solved mirror normal with the optical wall, across **every segment** of a long message. This produces one shared, fixed view transform for all frames — not a frame-by-frame crop, typography overlay, texture, or altered physical reflection. The projection view stays dark and uncluttered, is centered using the intersection bounds, and reserves room for the glow and optional signature. Full-scene GIFs get a modest optical-camera push-in toward the projected region without changing the simulated rays. Both square and 9:16/16:9 outputs are supported.
+
+A saved project v1 now also retains the **Show scene labels** preference. The original three live technical labels are on by default, but can be hidden independently from rays and the mirror inspector. Legacy projects without the field restore with labels enabled. Original 448/666 drawings, text, share links, and project files are unchanged.
+
+Selecting OVERDRIVE reveals a short, nonblocking terminal-style Easter egg once per page session, with reduced-motion support. The 1337 mode relaxes the animation frame budget to ~20 FPS to protect input responsiveness; it **never reduces the number of physically calculated mirrors**. The existing 400-grapheme editor, adaptive multi-scene sequencing, GIF cancel and share dialog, clean export and optional signature are preserved.
+
+### Measured QA — desktop headless browsers, not phone hardware
+
+- **25/25 Node optics and project tests** passed, including independently recomputed forward rays for all 448, 666 and 1337 facets.
+- **Chromium and Firefox** independently exported/decoded OVERDRIVE square, complete scene and long-message GIFs; Chromium also generated real portrait and landscape GIFs. Original 448 and 666 export regressions passed.
+- A 320×320 OVERDRIVE **NEBU** projection had **+16.7% luminous width in Chromium** and **+17.5% in Firefox** relative to the old unframed view in independent Pillow measurements. Before and after preview PNGs are attached to the CI artifact.
+- Illustrative 390×390 offscreen-frame measurements (headless Linux runners): Chromium **448: 4.3 ms, 666: 5.5 ms, 1337: 6.6 ms**; Firefox **448: 7.7 ms, 666: 11.7 ms, 1337: 22.7 ms**. These are diagnostic render timings, not guaranteed user-device FPS.
+- Android-sized portrait and landscape simulations, DE/EN UI, project persistence and compressed link roundtrip, cancellation, public/private sharing, and the existing educational modal passed.
+- Actual Android/iOS performance and native WhatsApp file handoff **have not been tested as part of this automated run** and require a hands-on check. No Worldnode deployment or promotional posting is performed by this change.
+
 ## The physics, not a hidden texture
 
 The target image is sampled into discrete points. An **inverse solver** computes a suitable orientation for each mirror; it is then deliberately kept separate from the **forward projection**. The forward renderer sees mirror geometry and the lamp — **not the original drawing or text**.
