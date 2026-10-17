@@ -5,7 +5,7 @@ export function createCamera(){return {yaw:.36,pitch:.46,distance:22,target:[1.0
 function projector(camera,w,h,flat=false){
  const {yaw,pitch,distance,target}=camera;
  const eye=add(target,[Math.cos(pitch)*Math.cos(yaw)*distance,Math.sin(pitch)*distance,Math.cos(pitch)*Math.sin(yaw)*distance]);
- const forward=unit(sub(target,eye)),right=unit(cross(forward,[0,1,0])),up=cross(right,forward),focal=Math.min(w*.69,h*1.37);
+ const forward=unit(sub(target,eye)),right=unit(cross(forward,[0,1,0])),up=cross(right,forward),focal=Math.min(w*(camera.focalScale||.69),h*1.37);
  return p=>{const v=sub(p,eye),d=dot(v,forward);if(d<=.01)return null;
   return [w*.5+dot(v,right)/d*focal,h*.515-dot(v,up)/d*focal,d];};
 }
@@ -38,13 +38,13 @@ function projectGlow(ctx,p,spots,img,w,h,brightness=1,mode='scene'){
  }
  ctx.restore();
 }
-function flatMap(w,h){const margin=.075,s=Math.min((w*(1-margin*2))/(WALL.hiZ-WALL.loZ),(h*(1-margin*2))/(WALL.hiY-WALL.loY));
- return pt=>[w*.5+(pt[2]-(WALL.hiZ+WALL.loZ)/2)*s,h*.5-((pt[1]-(WALL.hiY+WALL.loY)/2))*s,10];}
+function flatMap(w,h,reverseView=false){const margin=.075,s=Math.min((w*(1-margin*2))/(WALL.hiZ-WALL.loZ),(h*(1-margin*2))/(WALL.hiY-WALL.loY));
+ return pt=>[w*.5+(reverseView?-1:1)*(pt[2]-(WALL.hiZ+WALL.loZ)/2)*s,h*.5-((pt[1]-(WALL.hiY+WALL.loY)/2))*s,10];}
 export function drawProjectionOnly(ctx,scene,mirrors,light,opts={}){
- const {width:w,height:h,align=1,time=0,ice=false}=opts;ctx.clearRect(0,0,w,h);
+ const {width:w,height:h,align=1,time=0,ice=false,reverseView=false}=opts;ctx.clearRect(0,0,w,h);
  // Flat dark studio backdrop: avoids distracting gradient/dither textures in GIF exports.
  ctx.fillStyle='#0a1019';ctx.fillRect(0,0,w,h);
- const p=flatMap(w,h),s=spotsFor(mirrors,light,align,time);
+ const p=flatMap(w,h,reverseView),s=spotsFor(mirrors,light,align,time);
  projectGlow(ctx,p,s,ice?scene.cool:scene.warm,w,h,1);
 }
 export function drawScene(ctx,scene,mirrors,light,opts={}){
