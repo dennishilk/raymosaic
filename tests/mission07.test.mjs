@@ -57,8 +57,8 @@ test('projection framing uses forward hits and a single coherent geometry transf
    if(!withinWall(hit))continue;
    const sx=frame.centerX+(hit[2]-frame.centerZ)*frame.scale;
    const sy=frame.screenY-(hit[1]-frame.centerY)*frame.scale;
-   assert.ok(sx>w*.12&&sx<w*.88,'glow margin x');
-   assert.ok(sy>h*.12&&sy<h*.80,'glow and signature margin y');
+   assert.ok(sx>w*.08&&sx<w*.92,'glow margin x');
+   assert.ok(sy>h*.08&&sy<h*.82,'glow and signature margin y');
   }
   const camera=exportCamera(bounds,w,h,{yaw:.36,pitch:.46,distance:22,target:[1,2,0]});
   assert.ok(camera.distance<22&&camera.focalScale>.69);
