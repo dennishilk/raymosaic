@@ -190,7 +190,7 @@ function snapshot(){
  return validateProject({format:'raymosaic',version:1,kind:motifKind,text:motifText,drawing:captureDrawing(draw),
   light:[...light],aimLight:[...aimLight],
   camera:{yaw:scene.camera.yaw,pitch:scene.camera.pitch,distance:scene.camera.distance,target:[...scene.camera.target]},
-  ice,rays:showRays,mirrorDrawing:$('mirrorDrawing').checked,normals:mirrors.map(m=>m.normal.map(n=>Math.round(n*1e8)/1e8))});
+  ice,rays:showRays,mirrorDrawing:$('mirrorDrawing').checked,mirrorText:$('mirrorText').checked,mirrorCount,sceneIndex,normals:mirrors.map(m=>m.normal.map(n=>Math.round(n*1e8)/1e8))});
 }
 function scheduleAutoSave(){
  if(restoring||booting)return;
@@ -203,13 +203,15 @@ function restoreProject(candidate){
  try{
   if(p.drawing)restoreDrawing(draw,p.drawing);
   else drawctx.clearRect(0,0,draw.width,draw.height);
-  history=[];$('mirrorDrawing').checked=p.mirrorDrawing;
+  history=[];$('mirrorDrawing').checked=p.mirrorDrawing;$('mirrorText').checked=p.mirrorText;
+  mirrorCount=p.mirrorCount;baseMirrors=mirrorCount===666?createArray(37,18):createArray(28,16);$('mirrorDensity').value=String(mirrorCount);$('mirrorCount').textContent=`${mirrorCount} MIRRORS`;
   light=[...p.aimLight];
   if(p.kind==='draw')setTargets('draw',draw);
   else if(p.kind==='text')setTargets('text',p.text);
   else if(p.kind==='hello')setTargets('text','HELLO');
   else setTargets(p.kind);
-  if(p.normals)mirrors=mirrors.map((m,i)=>({...m,normal:[...p.normals[i]]}));
+  if(p.kind==='text'&&sceneMirrors.length){sceneIndex=Math.min(p.sceneIndex,sceneMirrors.length-1);mirrors=sceneMirrors[sceneIndex];sequencePlaying=false;sceneEntered=performance.now();}
+  if(p.normals){mirrors=mirrors.map((m,i)=>({...m,normal:[...p.normals[i]]}));if(p.kind==='text'&&sceneMirrors.length)sceneMirrors[sceneIndex]=mirrors;}
   aimLight=[...p.aimLight];light=[...p.light];
   for(const [id,i] of [['lightX',0],['lightY',1],['lightZ',2]])$(id).value=String(light[i]);
   $('lightCoordinates').textContent=light.map(x=>x.toFixed(1)).join(' / ');
@@ -217,7 +219,7 @@ function restoreProject(candidate){
   $('recalculate').disabled=!lightDirty;
   scene.camera={...p.camera,target:[...p.camera.target]};cameraTouched=true;responsiveCamera();
   ice=p.ice;showRays=p.rays;$('coolLight').checked=ice;$('showRays').checked=showRays;
-  $('customText').value=p.kind==='text'?p.text:'';
+  $('customText').value=p.kind==='text'?p.text:'';$('characterCount').textContent=`${messageLength($('customText').value)} / ${MAX_MESSAGE_GRAPHEMES}`;renderSequenceControls();
   preset=['heart','star','bolt'].includes(p.kind)?p.kind:'custom';
   updatePresetButtons(preset);selectTab(p.kind==='draw'?'draw':p.kind==='text'?'text':'presets');
   $('opticsMessage').textContent=t('optics');renderProjectionPreview();
@@ -275,6 +277,11 @@ $('publicCopy').addEventListener('click',async()=>{
  catch{window.prompt(language==='de'?'Öffentlichen Link kopieren':'Copy public website link',url);}
 });
 
+// The explainer uses native dialog focus management and respects Escape/reduced motion.
+const physicsModal=$('physicsDialog');
+$('howItWorks').addEventListener('click',()=>physicsModal.showModal());
+$('closePhysics').addEventListener('click',()=>physicsModal.close());
+physicsModal.addEventListener('close',()=>$('howItWorks').focus());
 applyLanguage();
 loadSharedHash();
 window.addEventListener('hashchange',loadSharedHash);
