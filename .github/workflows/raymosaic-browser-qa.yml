@@ -1,0 +1,42 @@
+name: RAYMOSAIC Browser and Export QA
+on:
+  push:
+    branches: [mission-raymosaic-04]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Unit tests
+        run: node --test tests/optics.test.mjs tests/project-state.test.mjs
+      - name: Install real browser test runners
+        run: |
+          npm install --no-save playwright@1.56.0
+          npx playwright install --with-deps chromium firefox
+      - name: Start local static website
+        run: |
+          python3 -m http.server 8000 --bind 127.0.0.1 > /tmp/raymosaic-server.log 2>&1 &
+          for i in $(seq 1 40); do curl -fsS http://127.0.0.1:8000/ >/dev/null && exit 0; sleep 1; done
+          cat /tmp/raymosaic-server.log
+          exit 1
+      - name: Browser GIF, PNG, storage and mobile viewport checks
+        run: node tests/browser-smoke.mjs
+      - name: Independently decode actual exported media
+        run: |
+          python3 -m pip install pillow
+          python3 tests/check-browser-exports.py
+      - name: Upload real exports and measurements
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: raymosaic-browser-qa
+          path: tests/artifacts/
+          if-no-files-found: ignore
