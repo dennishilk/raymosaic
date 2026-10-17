@@ -11,6 +11,14 @@ for(const [name,driver] of [['chromium',chromium],['firefox',firefox]]){
  const page=await context.newPage(),errors=[];
  page.on('pageerror',err=>errors.push(err.message));
  await page.goto(root,{waitUntil:'domcontentloaded'});
+ await page.locator('#customText').fill('F→');
+ await page.locator('#applyText').click();
+ const mirrored=await page.locator('#projectionPreview').evaluate(x=>x.toDataURL());
+ await page.locator('#mirrorText').uncheck();
+ const manual=await page.locator('#projectionPreview').evaluate(x=>x.toDataURL());
+ assert.notEqual(mirrored,manual,'asymmetric text needs different physical target normals');
+ await page.locator('#mirrorText').check();
+ assert.equal(await page.locator('#projectionPreview').evaluate(x=>x.toDataURL()),mirrored,'one correction only; no accidental double mirroring');
  await page.locator('#mirrorDensity').selectOption('666');
  assert.match(await page.locator('#mirrorCount').innerText(),/666/);
  await page.locator('#customText').fill(sample);
