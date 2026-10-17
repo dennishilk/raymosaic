@@ -14,6 +14,22 @@ for browser in ("chromium", "firefox"):
             if ImageChops.difference(first, current).getbbox(): changed += 1
         assert changed >= 2, f"{browser}: static GIF instead of animated frames"
         print(f"{browser}: animated GIF {im.size}, {im.n_frames} frames ({changed} changed)")
+    # Re-render the same projection with and without its optional signature.
+    with Image.open(root / f"{browser}-projection-branded.gif") as branded, Image.open(root / f"{browser}-projection-clean.gif") as clean:
+        assert branded.size == clean.size and branded.n_frames == clean.n_frames >= 3
+        final = branded.n_frames - 4
+        branded.seek(final)
+        clean.seek(final)
+        w, h = clean.size
+        area = (0, int(h * .85), int(w * .58), h)
+        a = branded.convert("RGB").crop(area)
+        b = clean.convert("RGB").crop(area)
+        assert ImageChops.difference(a, b).getbbox(), f"{browser}: branding toggle did not affect exported pixels"
+        # With no logo and the light motif away from the corner, the backdrop stays still.
+        corner = clean.convert("RGB").getpixel((2, 2))
+        clean.seek(0)
+        assert clean.convert("RGB").getpixel((2, 2)) == corner, f"{browser}: projection backdrop flickers"
+        print(f"{browser}: projection background and removable signature validated")
     with Image.open(root / f"{browser}.png") as im:
         im.load()
         assert im.format == "PNG" and im.size == (1600, 900)
