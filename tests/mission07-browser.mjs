@@ -23,6 +23,10 @@ for(const [name,engine] of [['chromium',chromium],['firefox',firefox]]){
   await page.locator('#mirrorDensity').selectOption('1337');
   assert.match(await page.locator('#mirrorCount').innerText(),/1337/);
   assert.equal(await page.locator('#overdriveMessage').isVisible(),true);
+  await page.waitForTimeout(2400);
+  await page.locator('#mirrorDensity').selectOption('448');
+  await page.locator('#mirrorDensity').selectOption('1337');
+  assert.equal(await page.locator('#overdriveMessage').isVisible(),false,'easter egg appears once per page session');
   await page.locator('#customText').fill('NEBU');
   await page.locator('#applyText').click();
   const perf=await page.evaluate(async()=>{
@@ -70,10 +74,7 @@ for(const [name,engine] of [['chromium',chromium],['firefox',firefox]]){
   await page.goto(link,{waitUntil:'domcontentloaded'});
   assert.equal(await page.locator('#mirrorDensity').inputValue(),'1337');
   assert.equal(await page.locator('#showLabels').isChecked(),false);
-  await page.waitForTimeout(2500);
-  await page.locator('#mirrorDensity').selectOption('448');
-  await page.locator('#mirrorDensity').selectOption('1337');
-  assert.equal(await page.locator('#overdriveMessage').isVisible(),false,'easter egg must not repeat every selection');
+
   await page.locator('#shareGif').click();
   await page.locator('#quality').selectOption('compact');
   await page.locator('#brandGif').uncheck();
