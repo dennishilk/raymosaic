@@ -18,8 +18,8 @@ export function projectionBounds(scenes,light){
 export function projectionFraming(bounds,width,height){
  const spanZ=Math.max(.6,bounds.maxZ-bounds.minZ),spanY=Math.max(.6,bounds.maxY-bounds.minY);
  // Reserve room for glow and the optional signature at the foot.
- const scale=Math.min(width*.72/spanZ,height*.65/spanY,Math.min(width,height)*.35);
- return {scale,centerZ:(bounds.minZ+bounds.maxZ)/2,centerY:(bounds.minY+bounds.maxY)/2,centerX:width*.5,screenY:height*.46};
+ const scale=Math.min(width*.80/spanZ,height*.70/spanY,Math.min(width,height)*.35);
+ return {scale,centerZ:(bounds.minZ+bounds.maxZ)/2,centerY:(bounds.minY+bounds.maxY)/2,centerX:width*.5,screenY:height*.45};
 }
 export function exportCamera(bounds,width,height,initial){
  // A restrained push-in for the scene export, while keeping lamp and
