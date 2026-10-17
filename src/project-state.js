@@ -1,4 +1,5 @@
-// Versioned, local-only RAYMOSAIC projects. No remote calls.\nimport {messageLength} from './message-sequence.mjs';
+// Versioned, local-only RAYMOSAIC projects. No remote calls.
+import {messageLength} from './message-sequence.mjs';
 export const PROJECT_VERSION=1, STORAGE_KEY='raymosaic.project.v1', LINK_MAX=1850;
 const BITMAP_BYTES=3600, MAX_PROJECT_BYTES=250000, MAX_TEXT=400;
 const finite=(n,min,max)=>typeof n==='number'&&Number.isFinite(n)&&n>=min&&n<=max;
