@@ -34,7 +34,7 @@ export function applyLanguage(){
  const home=document.getElementById('siteHome'),blog=document.getElementById('siteBlog'),swap=document.getElementById('siteLanguage');
  if(home)home.href=language==='de'?'/de/':'/';
  if(blog)blog.href=language==='de'?'/de/blog/':'/blog/';
- if(swap){const url=new URL(location.href);if(language==='de')url.searchParams.delete('lang');else url.searchParams.set('lang','de');swap.href=url.pathname+url.search+url.hash;swap.setAttribute('aria-label',language==='de'?'Switch to English':'Auf Deutsch wechseln');}
+ if(swap){const url=new URL(location.href);if(location.hostname==='localhost'||location.hostname==='127.0.0.1'){if(language==='de')url.searchParams.delete('lang');else url.searchParams.set('lang','de');swap.href=url.pathname+url.search+url.hash;}else swap.href=(language==='de'?'/lab/raymosaic/':'/de/lab/raymosaic/')+url.hash;swap.setAttribute('aria-label',language==='de'?'Switch to English':'Auf Deutsch wechseln');}
  if(language!=='de')return;
  for(const [selector,value] of Object.entries(de)){const el=document.querySelector(selector);if(!el)continue;if(value.includes('<'))el.innerHTML=value;else el.textContent=value;}
  document.getElementById('customText').placeholder='Schreib einen Namen…';
