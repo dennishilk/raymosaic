@@ -30,7 +30,7 @@ const de={
 '#publicMastodon':'Auf Mastodon teilen ↗',
 '#sharePrivacyNote':'Externe Anbieter öffnen sich erst nach deinem Klick. Der öffentliche Link enthält keine Zeichnung.',
 '#mirrorTextTitle':'Motiv automatisch spiegeln','#mirrorTextHelp':'Schreib ganz normal. RAYMOSAIC korrigiert die Ausrichtung für die echte Spiegelprojektion.',
-'#mirrorDensityLabel':'SPIEGELDICHTE','#densityHint':'Jeder Spiegel wird einzeln berechnet.',,
+'#mirrorDensityLabel':'SPIEGELDICHTE','#densityHint':'Jeder Spiegel wird einzeln berechnet.',
 '#showLabelsText':'Beschriftungen anzeigen','#showLabelsHelp':'Technische Hinweise zu Licht, Wand und Spiegeln',
 '#sequenceHeading':'Deine Nachricht aus Licht','#prevScene':'← Zurück','#nextScene':'Weiter →',
 '#howItWorks span':'Wie funktioniert das?','#physicsEyebrow':'DIE PHYSIK DES LICHTS',
