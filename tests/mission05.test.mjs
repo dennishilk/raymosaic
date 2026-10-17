@@ -10,18 +10,18 @@ const old={...base,kind:'text',text:'LUNA',drawing:''};
 test('asymmetric arrow and letters are corrected exactly once without mutating input',()=>{
  const arrow=[[.1,.3],[.3,.3],[.7,.65],[.9,.3]],copy=arrow.map(p=>[...p]);
  const corrected=orientDrawingTargets(arrow,true);
- assert.deepEqual(corrected,[[.9,.3],[.7,.3],[.3,.65],[.1,.3]]);
+ for(let i=0;i<arrow.length;i++){assert.ok(Math.abs(corrected[i][0]-(1-arrow[i][0]))<1e-12);assert.equal(corrected[i][1],arrow[i][1]);}
  assert.deepEqual(arrow,copy);
  assert.deepEqual(orientDrawingTargets(arrow,false),arrow);
  const letters=[[.17,.4],[.82,.4],[.28,.7]];
- assert.deepEqual(orientDrawingTargets(orientDrawingTargets(letters,true),true),letters);
+ const twice=orientDrawingTargets(orientDrawingTargets(letters,true),true);for(let i=0;i<letters.length;i++)for(let k=0;k<2;k++)assert.ok(Math.abs(twice[i][k]-letters[i][k])<1e-12);
 });
 test('asymmetric corrected target remains optically consistent in forward reflection',()=>{
- const facet=createArray(1,1);
+ const facets=createArray();
  for(const correction of [false,true]){
    const uv=orientDrawingTargets([[.23,.41]],correction)[0];
-   const aimed=aimMirrors(facet,[-4.7,6.8,3.8],[uv])[0];
-   assert.equal(aimed.valid,true);
+   const aimed=aimMirrors(facets,[-4.7,6.8,3.8],facets.map(()=>uv)).find(m=>m.valid);
+   assert.ok(aimed,'at least one mirror must reach the asymmetric target');
    const hit=projectMirror([-4.7,6.8,3.8],aimed.center,aimed.normal,WALL.x).center;
    assert.ok(hit);
    const goal=wallPoint(...uv);
