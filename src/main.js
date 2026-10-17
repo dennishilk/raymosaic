@@ -90,7 +90,7 @@ $('startExport').addEventListener('click',async()=>{
  const bufferCanvas=document.createElement('canvas');bufferCanvas.width=width;bufferCanvas.height=height;
  const frameCtx=bufferCanvas.getContext('2d',{willReadFrequently:true});
  const prog=$('exportProgress'),status=$('progressStatus'),fill=$('progressFill'),pct=$('progressPct');prog.classList.remove('hidden');status.textContent='Encoding animation…';fill.style.width='0%';pct.textContent='0%';
- try{const worker=new Worker('./src/gif-worker.js');exportWorker=worker;let index=0;
+ try{const worker=new Worker(new URL('./gif-worker.js',import.meta.url));exportWorker=worker;let index=0;
   worker.onmessage=e=>{
    if(worker!==exportWorker)return;
    const msg=e.data;
