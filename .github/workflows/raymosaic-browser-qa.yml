@@ -1,7 +1,7 @@
 name: RAYMOSAIC Browser and Export QA
 on:
   push:
-    branches: [mission-raymosaic-04]
+    branches: [mission-raymosaic-04, mission-raymosaic-05, main]
   pull_request:
   workflow_dispatch:
 permissions:
@@ -16,7 +16,7 @@ jobs:
         with:
           node-version: '22'
       - name: Unit tests
-        run: node --test tests/optics.test.mjs tests/project-state.test.mjs
+        run: node --test tests/optics.test.mjs tests/project-state.test.mjs tests/mission05.test.mjs
       - name: Install real browser test runners
         run: |
           npm install --no-save playwright@1.56.0
@@ -29,6 +29,8 @@ jobs:
           exit 1
       - name: Browser GIF, PNG, storage and mobile viewport checks
         run: node tests/browser-smoke.mjs
+      - name: Mirror orientation, public sharing and portrait/landscape browser regressions
+        run: node tests/mission05-browser.mjs
       - name: Independently decode actual exported media
         run: |
           python3 -m pip install pillow
