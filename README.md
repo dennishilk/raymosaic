@@ -99,6 +99,26 @@ The GIF polish branch `polish-raymosaic-gif-export-20261017` is integrated, not 
 
 **A desktop browser with an emulated phone viewport is not a physical Android or iPhone.** Dennis has tested the app on his own Android smartphone; these automated tests do not claim to reproduce his device. An actual iOS and native messenger handoff test remains a manual release-quality check.
 
+## Mission 06 — 666 mirrors for the love ❤️🪞
+
+**No texture-overlay tricks.** A long message is split into brief stages at word, punctuation and explicit line boundaries. Each scene receives its own deterministic target samples, and each facet is independently aimed with the same inverse reflection solver already used by classic RAYMOSAIC. The forward renderer projects rays onto the virtual wall; between scenes we interpolate mirror normals to make the real facets visibly reorient.
+
+- **448 mirrors**: original 28×16 lattice, 13-character single-scene capacity.
+- **666 mirrors — For the love ❤️**: real 37×18 lattice, 15-character scene capacity.
+- **Up to 400 Unicode graphemes** in the multiline composer. Text and punctuation stay intact in projects and compressed URLs; very long share URLs warn and recommend the project file instead.
+- **Automatic mirroring** is available separately for text and drawing. It transforms target coordinates *once before solving*, rather than horizontally flipping the rendered projection. Legacy project files and links still default to the original unmirrored text and 448 mirrors.
+- **Previous / pause / next** and the full-text preview allow inspecting the sequence. The live renderer animates mirror orientations between scenes.
+- **Animated GIF** extends its duration to cover *all* scenes, keeping each completed scene visible. The message scene transition uses the actual computed normals in every exported frame. For costly high-resolution multi-scene sequences, an explicit warning recommends the Messaging export quality; no silent truncation occurs. The existing formats, optional signature and clean backgrounds remain.
+- **PNG** captures **the currently selected segment** only, with a filename containing its index. It never claims to contain the whole message.
+- **ⓘ How it works** explains one source, normals, the reflection equation, wall intersection, reorientation and native GIF rendering through an accessible bilingual dialog with a reduced-motion-aware illustrated ray.
+- Public sharing remains distinct from personal project links and GIF files. No tracker or remote rendering was added.
+
+### Tests and boundaries
+
+`node --test tests/optics.test.mjs tests/project-state.test.mjs tests/mission05.test.mjs tests/mission06.test.mjs` exercises old and new project formats, true 448/666 optics, Unicode segments, project files, URL fragments and GIF timeline coverage. CI also tests both Linux Chromium and Firefox with a 150+ character love message, 666 actual facets, an automatically extended GIF and independent Pillow decoding.
+
+One automated sample produced **17 stages and 304 GIF frames at 320×320 pixels** in each tested Linux browser. This is a software QA observation, not a guarantee about phone performance. Desktop browser viewport emulation is **not** a physical Android or iOS test. High-detail 1024 mirrors is optional and was intentionally not implemented pending performance measurements. Browser font availability affects emoji glyphs; the complete text remains preserved even when a glyph cannot render.
+
 ## The physics, not a hidden texture
 
 The target image is sampled into discrete points. An **inverse solver** computes a suitable orientation for each mirror; it is then deliberately kept separate from the **forward projection**. The forward renderer sees mirror geometry and the lamp — **not the original drawing or text**.
