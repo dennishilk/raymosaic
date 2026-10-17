@@ -42,3 +42,11 @@ The independent output check in `tests/validate-exports.py` decodes produced med
 ## Principles for future work
 
 Keep the forward optics engine separate from targets and UI. Add richer physical assumptions only with clear tests and documentation. Favor inspectability, locally generated media and an understandable mathematical model over visual cheats.
+
+## Export rendering boundary
+
+`src/export-renderer.js` selects one of two explicit paths. Projection mode calls only `drawProjectionOnly`: solid black and sprites at actual forward intersections. Full-scene mode calls `drawScene` with an independent perspective camera, retaining the wall frame, mirror array and lamp. Neither path receives target text or a drawing mask. The optional signature is the only export typography.
+
+`projectionBounds` evaluates every accepted forward center-ray intersection for every solved message scene. One isotropic transform fits their union, with a footprint limit that keeps the entire stylized glow inside the frame. The same center and scale are retained through transitions. Signature space is reserved only when requested. Transient rays outside the completed-motif bounds can leave the image during reorientation; the view does not chase them.
+
+The GIF worker disables ordered dithering for projection mode. Dialog changes revoke the old object URL and remove stale previews/downloads. Settings are disabled while an export is running, then restored on completion, cancellation or failure. Closing the dialog clears its generated file.

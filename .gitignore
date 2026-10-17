@@ -9,3 +9,5 @@ result
 .env
 .env.*
 !*.example
+/node_modules
+/tests/artifacts/

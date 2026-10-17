@@ -57,8 +57,9 @@ test('projection framing uses forward hits and a single coherent geometry transf
    if(!withinWall(hit))continue;
    const sx=frame.centerX+(hit[2]-frame.centerZ)*frame.scale;
    const sy=frame.screenY-(hit[1]-frame.centerY)*frame.scale;
-   assert.ok(sx>w*.08&&sx<w*.92,'glow margin x');
-   assert.ok(sy>h*.08&&sy<h*.82,'glow and signature margin y');
+   const glow=frame.glowLimit*2.1;
+   assert.ok(sx>=glow-1e-7&&sx<=w-glow+1e-7,'entire glow footprint fits horizontally');
+   assert.ok(sy>=glow-1e-7&&sy<=h-Math.max(glow,h*.13)+1e-7,'glow and signature margin y');
   }
   const camera=exportCamera(bounds,w,h,{yaw:.36,pitch:.46,distance:22,target:[1,2,0]});
   assert.ok(camera.distance<22&&camera.focalScale>.69);
