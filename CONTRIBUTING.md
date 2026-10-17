@@ -4,7 +4,7 @@ Thanks for helping make light draw! RAYMOSAIC is an experimental optics-and-visu
 
 ## Run and test
 
-Serve the repository root with `python3 -m http.server 8000`, then open `http://localhost:8000`. Run `node --test tests/optics.test.mjs` for the dependency-free optical math suite. There is also an optional Nix development environment (`nix develop`).
+Serve the repository root with `python3 -m http.server 8000`, then open `http://localhost:8000`. Run `node --test tests/*.test.mjs` for the dependency-free optical math suite. There is also an optional Nix development environment (`nix develop`).
 
 ## Engineering principles
 
@@ -19,4 +19,4 @@ Serve the repository root with `python3 -m http.server 8000`, then open `http://
 
 Please explain what changed, how you tested it and whether it affects the independent forward model. For UI work, a small screenshot or screen recording is helpful. Keep changes reasonably focused.
 
-See [README.md](README.md) for current limitations and the roadmap to a public hosted demo.
+See [README.md](README.md) for current limitations and the live demo and current limitations.

@@ -1,7 +1,7 @@
 name: RAYMOSAIC Browser and Export QA
 on:
   push:
-    branches: [mission-raymosaic-04, mission-raymosaic-05, mission-raymosaic-06, mission-raymosaic-07, main]
+    branches: [mission-raymosaic-04, mission-raymosaic-05, mission-raymosaic-06, mission-raymosaic-07, mission-raymosaic-08, main]
   pull_request:
   workflow_dispatch:
 permissions:
@@ -16,7 +16,7 @@ jobs:
         with:
           node-version: '22'
       - name: Unit tests
-        run: node --test tests/optics.test.mjs tests/project-state.test.mjs tests/mission05.test.mjs tests/mission06.test.mjs tests/mission07.test.mjs
+        run: node --test tests/optics.test.mjs tests/project-state.test.mjs tests/mission05.test.mjs tests/mission06.test.mjs tests/mission07.test.mjs tests/mission08.test.mjs
       - name: Install real browser test runners
         run: |
           npm install --no-save playwright@1.56.0
@@ -35,12 +35,15 @@ jobs:
         run: node tests/mission06-browser.mjs
       - name: OVERDRIVE, label persistence, adaptive GIF framing and mobile performance
         run: node tests/mission07-browser.mjs
+      - name: Projection-only isolation, complete export matrix and localized dialog regressions
+        run: node tests/mission08-browser.mjs
       - name: Independently decode actual exported media
         run: |
           python3 -m pip install pillow
           python3 tests/check-browser-exports.py
           python3 tests/check-mission06-exports.py
           python3 tests/check-mission07-exports.py
+          python3 tests/check-mission08-exports.py
       - name: Upload real exports and measurements
         if: always()
         uses: actions/upload-artifact@v4

@@ -2,220 +2,163 @@
 
 # RAYMOSAIC ✨
 
-### Draw pictures with reflected light — right in your browser.
+[![Browser & export tests](https://github.com/dennishilk/raymosaic/actions/workflows/raymosaic-browser-qa.yml/badge.svg?branch=main)](https://github.com/dennishilk/raymosaic/actions/workflows/raymosaic-browser-qa.yml)
+[![JavaScript](docs/badges/javascript.svg)](src/main.js)
+[![HTML5](docs/badges/html5.svg)](index.html)
+[![CSS3](docs/badges/css3.svg)](styles.css)
+[![No uploads](docs/badges/no-uploads.svg)](SECURITY.md)
+[![Mirror modes](docs/badges/mirrors.svg)](#three-mirror-modes)
+[![License: MIT](docs/badges/license.svg)](LICENSE)
 
-**448 tiny mirrors. One light source. A message made entirely of reflections.**
+### Draw with Light.
 
-A free, local-first optical playground by [Dennis Hilk](https://dennishilk.com). Turn a heart, word, or drawing into a glowing projection, move the lamp to break it, then realign the mirrors and export the moment as an animated GIF.
+**One light. 1337 mirrors. A message made of reflections.**
 
-**[Quick start](#try-it-locally)** · **[Project files and links](#keep-your-project-and-share-it)** · **[How it works](#the-physics-not-a-hidden-texture)** · **[Examples](#see-it-in-action)** · **[Limitations](#what-this-prototype-does-not-simulate)**
+[**Try it in English ↗**](https://www.dennishilk.com/lab/raymosaic/) · [**Auf Deutsch ausprobieren ↗**](https://www.dennishilk.com/de/lab/raymosaic/)
 
-</div>
-
-![RAYMOSAIC interface showing 448 mirrors projecting a warm golden heart onto a wall](examples/raymosaic-heart.webp)
-
-> **Release candidate — not yet deployed to Dennis's website.** The browser source, versioned local projects, compressed share links, bilingual website entry points and export UI are in Mission 04 staging. Automated browser QA is tracked by the [test workflow](.github/workflows/raymosaic-browser-qa.yml); do not confuse an automated timing measurement with a human usability test. Nothing is deployed to Worldnode as part of repository changes.
-
-## See it in action
-
-<div align="center">
-
-![An animated reflected-light projection gradually forming the letters NEBU](examples/raymosaic-scene-nebu.gif)
-
-*An actual multi-frame GIF exported from RAYMOSAIC — not a static animation mockup.*
-
-[20-second demo video](examples/raymosaic-20s-demo.mp4) · [Projection-only GIF](examples/raymosaic-nebu.gif) · [NEBU screenshot](examples/raymosaic-nebu.webp)
+![Actual RAYMOSAIC projection-only GIF: warm light forms a message on a black background](examples/raymosaic-projection.gif)
 
 </div>
 
-The original 3D composition is also available as the [heart screenshot](examples/raymosaic-heart.webp). All example imagery was generated from the application; no stock artwork or simulated screenshots were used.
+Type a name, draw a little heart, or write someone a longer message. RAYMOSAIC aims hundreds of individual virtual mirrors so one point light forms your design on a wall. Move the lamp and the image breaks apart; realign the mirrors and it returns. Export those calculated reflections as a GIF to send someone a little light.
+
+This is a geometrical-optics experiment by [Dennis Hilk / NEBU](https://www.dennishilk.com/), built with JavaScript and Canvas 2D. The creative input guides mirror orientation; a separate forward renderer calculates the light you actually see.
+
+![The real RAYMOSAIC interface, with its mirror array, light source, projection wall and creative controls](examples/raymosaic-heart.webp)
+
+## Create, explore, keep
+
+- **Text and drawing:** presets, a multiline composer, brush, eraser, undo, and separate automatic orientation correction for text and drawings.
+- **Complete messages:** up to 400 Unicode graphemes, split at words, punctuation and line breaks into optical scenes. Previous, pause and next controls let you inspect each part.
+- **Explore the instrument:** orbit and zoom, move the point light, reveal rays, select a mirror to inspect its normal, and toggle scene labels.
+- **Local exports:** looping GIFs in square, portrait or landscape; projection-only or full-scene rendering; warm or cool light; optional signature; progress and cancellation.
+- **Still images:** PNG captures the currently selected optical scene at 1600 × 900.
+- **Keep your work:** local autosave, validated `.raymosaic` project files and compressed creation links.
+- **Two languages:** English and German interface, educational dialog and export messages.
+
+## Three mirror modes
+
+| Configuration | Actual facets | Text per scene |
+| --- | --- | --- |
+| **448 mirrors · Classic** | 28 × 16 | Up to 13 graphemes |
+| **666 mirrors · DOOM of Love ❤️** | 37 × 18 | Up to 15 graphemes |
+| **1337 mirrors · OVERDRIVE 🚀** | 51 × 27 lattice, 40 empty corner positions | Up to 17 graphemes |
+
+Every facet has its own position, surface normal, ID and forward reflection calculation. Higher counts provide more light samples; detailed images still depend on the available geometry. OVERDRIVE is a playful nod to **1337 / leet** culture. DOOM of Love is a playful Easter egg, with no affiliation with the DOOM franchise.
+
+Long messages span multiple scenes rather than being cut off at the single-scene capacity. Each scene recalculates the mirror normals; transitions animate those orientations. OVERDRIVE gives the live renderer more time between frames while retaining all 1337 mirrors.
+
+## The optical calculation
+
+1. Sample the text or sketch into desired wall coordinates.
+2. Solve an orientation for each facet using the light position, mirror center and assigned target.
+3. Independently reflect rays from the mirror center and corners, then intersect them with the wall.
+4. Draw light spots at those computed intersections, with an illustrative glow.
+
+For the unit incident direction **i** (source → mirror) and unit surface normal **n**, the law of reflection is:
+
+```text
+r = i − 2(i · n)n
+```
+
+The normal bisects the directions needed to send light toward the target. For desired outgoing unit direction **o**, the inverse solver uses `n = normalize(o − i)`, subject to its tilt limit. The forward renderer receives geometry and the source, with no access to the input text, drawing mask or target texture.
+
+Moving the source without recalculating changes the incident rays and distorts the motif. That visible cause and effect is also a useful way to explore the model. Read [Architecture and optical assumptions](docs/ARCHITECTURE.md) for the derivation and limitations.
+
+## GIFs and PNGs
+
+**Projection only (no instrument)** draws only actual reflected light against solid black. It uses a dedicated flat projection path, so no mirrors, lamp, wall frame or technical scene geometry can enter the image. Framing comes from the union of forward ray intersections across the entire message. A single scale and center keep the sequence steady, with margins for glow and the optional signature. Projection GIFs disable ordered dithering.
+
+**Full scene** retains the source, individual mirrors and projection wall with its own perspective camera. It shows how the artwork is made. Both modes encode real rendered frames locally in a cancelable Web Worker. Changing an export setting discards the old preview and download, so the file always represents the selected settings. Settings are locked during generation.
+
+The **Make a GIF gift** shortcut selects a compact, three-second projection loop for a short message. Longer messages automatically extend the animation so every segment appears. If a high-resolution sequence exceeds the memory budget, choose Messaging quality or shorten the message. Nothing is silently truncated.
+
+PNG saves the current scene, including the physical instrument. For multipart text, its filename includes the scene index. It does not contain the whole animated message.
+
+Native GIF sharing appears only when the browser supports file sharing. A download remains available; messaging apps can re-encode or display animations differently. MP4 and WebM are not built-in export formats.
+
+## Privacy and sharing
+
+No account, analytics, tracking script, external rendering service or background upload. Text, sketches, mirror settings and exported frames are processed on your device. The static site still serves the application assets in the usual way.
+
+Three sharing actions serve different purposes:
+
+| Action | What is shared |
+| --- | --- |
+| **Share RAYMOSAIC ❤️** | The public lab URL, without your private motif |
+| **Share my creation** | A compact project in the URL fragment; recipients can recreate the motif |
+| **GIF / project download** | A local file that you choose whether to send |
+
+Project format **v1** stores the motif, drawing mask, current and last-aligned light positions, camera, appearance, mirror count, label/orientation preferences and mirror normals. Files are validated before import. Local saves use browser storage; clearing site data removes them, so download a project file for a durable backup.
+
+Creation links deterministically regenerate orientations from compact state. Native gzip compression is used where supported, with an approximately 1850-character fragment limit. Larger projects should travel as files. A fragment is not uploaded to create the link, but anyone who receives the complete URL can see its contents. External share services open only after an explicit click. See [SECURITY.md](SECURITY.md).
 
 ## Try it locally
 
-Requirements: **Python 3** (or any local static HTTP server) and a recent graphical browser. No npm install, account, API key, backend, or proprietary software is required.
+Requirements: **Python 3** or another static HTTP server, and a recent desktop browser. Running the app needs no npm install, build step, API key or backend.
 
 ```bash
-# From the repository directory:
+git clone https://github.com/dennishilk/raymosaic.git
+cd raymosaic
 python3 -m http.server 8000
 ```
 
-Open **http://localhost:8000**.
+Open [localhost:8000](http://localhost:8000), or [the German interface](http://localhost:8000/?lang=de). Serve over HTTP so ES modules and the Worker load correctly. On NixOS, `nix develop` provides the optional development environment in [flake.nix](flake.nix).
 
-> For security and correct ES module loading, use a local HTTP server, not `file://`. Nothing is transmitted to RAYMOSAIC's servers — there is no RAYMOSAIC server.
+The canonical source lives here. The website repository regenerates its static copy with `scripts/sync-raymosaic.sh`; application changes should start in this repository.
 
-On NixOS, you may instead enter the provided development environment with `nix develop` before running the command above.
+## Tests
 
-### Your first minute
-
-1. Watch the default heart form out of reflections.
-2. Enter a short name such as `LUNA` in **Text** and choose **Create** or **Make a GIF gift** for the fastest export.
-3. Turn on **Reveal light rays** and select a mirror to inspect it.
-4. Move a **Light position** slider: the existing mirror orientations stay fixed, so the projection distorts.
-5. Click **Recalculate mirrors** to solve for the new light position.
-6. Click **Export & Share** to download a real looping GIF, or use **PNG** for a still image. For a longer-lived scene, use **Save project**, **Download project file** or **Copy link**.
-
-## What you can do
-
-| Create | Investigate | Share |
-| --- | --- | --- |
-| Heart, HELLO, lightning bolt and star presets | Orbit/zoom the 3D instrument | Animated looping GIF |
-| Custom text (best with short words) | Select a mirror and inspect its geometry | Projection-only or full-scene GIF |
-| Freehand drawing with brush, eraser, undo and clear | Reveal incident and outgoing rays | Square, portrait or landscape |
-| Warm or cool light | Move the source; manually recalculate the array | PNG, project files, local save, compressed share links |
-
-Everything is calculated and encoded locally. The browser offers native file sharing **only where the Web Share API supports it**; downloading always remains the fallback.
-
-## Keep your project and share it
-
-RAYMOSAIC project format **v1** is a local JSON file (extension `.raymosaic`). It contains the motif/text, an encoded 240 × 120 drawing mask, current and last-aligned light positions, camera, appearance and all **448 mirror normals**. Importing a project validates the version, lengths and numeric ranges before restoring it. The file format is human-inspectable and can be migrated explicitly in a future revision.
-
-**Save project** and local autosave use the browser's local storage. **Restore last project** restores it after reopening the page. **Download project file** is the durable backup option — deleting site data also deletes the browser's own saved projects.
-
-**Copy link** uses native browser gzip compression (where supported) and places only a compact, validated state in the URL **fragment**. The receiving browser deterministically recreates mirror orientations from the motif and last-aligned source position. Links are deliberately limited to about 1,850 characters; if a drawing is larger or compression is unsupported, use the project file instead. The fragment is not automatically submitted to the website as an upload, but it **is visible to anyone you send the complete link to**.
-
-The original optics, animation, GIF worker and app UI remain in this repository. The public website hosts a **synchronized static copy of this exact source**, regenerated by its `scripts/sync-raymosaic.sh` script; do not edit two drifting implementations.
-
-### GIF and phone compatibility
-
-The **Make a GIF gift** shortcut prioritizes a 320-pixel short animation for practical mobile sharing. All frames are generated from the forward optics renderer and encoded in a cancelable background Worker. The existing export dialog supports larger formats and portrait or landscape orientation, but those require more memory and processing time. On capable browsers, the Web Share API passes a GIF file to the device's native share sheet; a plain download remains available. Messaging apps may re-encode GIFs or render previews differently.
-
-A true **30-second name → GIF → WhatsApp** acceptance test still requires observation with a real user and a real phone, not just a headless timing test.
-
-## Mission 05 — Make it feel magical
-
-The **Drawing** tab now contains two explicitly labeled previews: your unchanged input sketch and a forward-rendered reflected-light preview. **Automatically mirror drawing** is enabled for new sketches; it reverses sampled target coordinates exactly once to compensate for the live scene's viewing direction, without altering the input canvas or the reflection law. Unchecking the option retains the legacy target orientation. The `mirrorDrawing` Boolean is an optional field in **project format v1**, defaulting to `false` for existing files and shared links.
-
-**Share RAYMOSAIC ❤️** opens a separate, privacy-conscious dialog for the **public website URL**. Native app sharing (when supported), WhatsApp, Facebook, X, email, a user-selected Mastodon instance, and copy link are available through explicit clicks. This is distinct from **Share my creation**, which copies a compressed personal-project fragment and reveals that motif to its recipients, and from **Export & Share GIF**, which produces a local animation file. The public share dialog never reads or transmits the current sketch.
-
-Mobile framing now places the optical stage beneath the intro text and adjusts camera target, distance and focal scale independently for portrait and short landscape viewports. A user-adjusted or loaded camera is not overridden by later orientation changes. The fixed toolbar respects safe areas and the document provides sufficient bottom space for form controls.
-
-The GIF polish branch `polish-raymosaic-gif-export-20261017` is integrated, not replaced: projection-only exports have a quiet dark studio backdrop, scene GIFs omit distracting grid effects, and the small **RAYMOSAIC** signature can be switched off in the existing export dialog. No video export is advertised.
-
-### Verification and device limits
-
-`node --test tests/optics.test.mjs tests/project-state.test.mjs tests/mission05.test.mjs` covers legacy project compatibility, asymmetric target orientation, real forward reflection, sharing privacy and Mastodon hostname validation.
-
-`node tests/browser-smoke.mjs` exercises Firefox/Chromium GIF formats, both branding states, PNG and project roundtrips. `node tests/mission05-browser.mjs` checks asymmetric drawing, local restoration, public sharing, translations and simulated 360×740, 390×844 and 844×390 viewports. `python3 tests/check-browser-exports.py` independently decodes generated media.
-
-**A desktop browser with an emulated phone viewport is not a physical Android or iPhone.** Dennis has tested the app on his own Android smartphone; these automated tests do not claim to reproduce his device. An actual iOS and native messenger handoff test remains a manual release-quality check.
-
-## Mission 06 — 666 mirrors for the love ❤️🪞
-
-**No texture-overlay tricks.** A long message is split into brief stages at word, punctuation and explicit line boundaries. Each scene receives its own deterministic target samples, and each facet is independently aimed with the same inverse reflection solver already used by classic RAYMOSAIC. The forward renderer projects rays onto the virtual wall; between scenes we interpolate mirror normals to make the real facets visibly reorient.
-
-- **448 mirrors**: original 28×16 lattice, 13-character single-scene capacity.
-- **666 mirrors — For the love ❤️**: real 37×18 lattice, 15-character scene capacity.
-- **Up to 400 Unicode graphemes** in the multiline composer. Text and punctuation stay intact in projects and compressed URLs; very long share URLs warn and recommend the project file instead.
-- **Automatic mirroring** is available separately for text and drawing. It transforms target coordinates *once before solving*, rather than horizontally flipping the rendered projection. Legacy project files and links still default to the original unmirrored text and 448 mirrors.
-- **Previous / pause / next** and the full-text preview allow inspecting the sequence. The live renderer animates mirror orientations between scenes.
-- **Animated GIF** extends its duration to cover *all* scenes, keeping each completed scene visible. The message scene transition uses the actual computed normals in every exported frame. For costly high-resolution multi-scene sequences, an explicit warning recommends the Messaging export quality; no silent truncation occurs. The existing formats, optional signature and clean backgrounds remain.
-- **PNG** captures **the currently selected segment** only, with a filename containing its index. It never claims to contain the whole message.
-- **ⓘ How it works** explains one source, normals, the reflection equation, wall intersection, reorientation and native GIF rendering through an accessible bilingual dialog with a reduced-motion-aware illustrated ray.
-- Public sharing remains distinct from personal project links and GIF files. No tracker or remote rendering was added.
-
-### Tests and boundaries
-
-`node --test tests/optics.test.mjs tests/project-state.test.mjs tests/mission05.test.mjs tests/mission06.test.mjs` exercises old and new project formats, true 448/666 optics, Unicode segments, project files, URL fragments and GIF timeline coverage. CI also tests both Linux Chromium and Firefox with a 150+ character love message, 666 actual facets, an automatically extended GIF and independent Pillow decoding.
-
-One automated sample produced **17 stages and 304 GIF frames at 320×320 pixels** in each tested Linux browser. This is a software QA observation, not a guarantee about phone performance. Desktop browser viewport emulation is **not** a physical Android or iOS test. High-detail 1024 mirrors is optional and was intentionally not implemented pending performance measurements. Browser font availability affects emoji glyphs; the complete text remains preserved even when a glyph cannot render.
-
-## Mission 07 — Optical OVERDRIVE 🚀
-
-Exactly three official choices: **448 mirrors · Classic** (28×16), **666 mirrors · DOOM of Love ❤️** (37×18), **1337 mirrors · OVERDRIVE 🚀** (51×27 lattice with 40 intentionally empty corner positions). The last mode has **exactly 1337** separate facet geometries, normals, forward ray tests, and selectable IDs; no rendered spot is duplicated or substituted.
-
-### Export composition
-
-The GIF exporter now computes the **actual forward intersection** of each solved mirror normal with the optical wall, across **every segment** of a long message. This produces one shared, fixed view transform for all frames — not a frame-by-frame crop, typography overlay, texture, or altered physical reflection. The projection view stays dark and uncluttered, is centered using the intersection bounds, and reserves room for the glow and optional signature. Full-scene GIFs get a modest optical-camera push-in toward the projected region without changing the simulated rays. Both square and 9:16/16:9 outputs are supported.
-
-A saved project v1 now also retains the **Show scene labels** preference. The original three live technical labels are on by default, but can be hidden independently from rays and the mirror inspector. Legacy projects without the field restore with labels enabled. Original 448/666 drawings, text, share links, and project files are unchanged.
-
-Selecting OVERDRIVE reveals a short, nonblocking terminal-style Easter egg once per page session, with reduced-motion support. The 1337 mode relaxes the animation frame budget to ~20 FPS to protect input responsiveness; it **never reduces the number of physically calculated mirrors**. The existing 400-grapheme editor, adaptive multi-scene sequencing, GIF cancel and share dialog, clean export and optional signature are preserved.
-
-### Measured QA — desktop headless browsers, not phone hardware
-
-- **25/25 Node optics and project tests** passed, including independently recomputed forward rays for all 448, 666 and 1337 facets.
-- **Chromium and Firefox** independently exported/decoded OVERDRIVE square, complete scene and long-message GIFs; Chromium also generated real portrait and landscape GIFs. Original 448 and 666 export regressions passed.
-- A 320×320 OVERDRIVE **NEBU** projection had **+16.7% luminous width in Chromium** and **+17.5% in Firefox** relative to the old unframed view in independent Pillow measurements. Before and after preview PNGs are attached to the CI artifact.
-- Illustrative 390×390 offscreen-frame measurements (headless Linux runners): Chromium **448: 4.3 ms, 666: 5.5 ms, 1337: 6.6 ms**; Firefox **448: 7.7 ms, 666: 11.7 ms, 1337: 22.7 ms**. These are diagnostic render timings, not guaranteed user-device FPS.
-- Android-sized portrait and landscape simulations, DE/EN UI, project persistence and compressed link roundtrip, cancellation, public/private sharing, and the existing educational modal passed.
-- Actual Android/iOS performance and native WhatsApp file handoff **have not been tested as part of this automated run** and require a hands-on check. No Worldnode deployment or promotional posting is performed by this change.
-
-## The physics, not a hidden texture
-
-The target image is sampled into discrete points. An **inverse solver** computes a suitable orientation for each mirror; it is then deliberately kept separate from the **forward projection**. The forward renderer sees mirror geometry and the lamp — **not the original drawing or text**.
-
-For an incoming unit ray direction **i** (light → mirror) and unit mirror normal **n**, the outgoing direction is:
-
-\[
-\mathbf{r}=\mathbf{i}-2(\mathbf{i}\cdot\mathbf{n})\mathbf{n}
-\]
-
-To aim at a desired wall point, let **o** be the outgoing unit direction (mirror → target). The ideal normal used by the solver is:
-
-\[
-\mathbf{n}=\frac{\mathbf{o}-\mathbf{i}}{\lVert\mathbf{o}-\mathbf{i}\rVert}
-\]
-
-Each mirror is represented by a finite square. The forward model reflects rays from its center and corners, computes intersections with the projection plane, and draws a stylized spot from those intersections. If the source moves without recalculation, the projected light moves too. That cause-and-effect relationship is the point of the experiment.
-
-For code and validation details, see [Architecture and optical assumptions](docs/ARCHITECTURE.md).
-
-## What this prototype does *not* simulate
-
-RAYMOSAIC uses ideal point illumination, perfect planar mirror reflections, sampled facet footprints and stylized smooth glow. It **does not** currently model diffraction, polarization, wavelength dispersion, inter-mirror occlusion, global illumination or self-shadowing. Mirror positions and tilt constraints are finite, so small detailed drawings cannot be reproduced perfectly. The scene is rendered using a lightweight **software perspective renderer on Canvas 2D** — not Three.js or WebGL.
-
-This is a **geometrical-optics educational model**, not physical photometry. We value clear explanations over pretending to be more precise than we are.
-
-## Source layout
-
-```text
-raymosaic/
-├── index.html              # Browser interface
-├── styles.css              # Responsive visual design
-├── src/
-│   ├── optics.mjs          # Pure vectors, reflection, inverse solver, plane intersections
-│   ├── targets.js          # Presets, text and drawing target samples
-│   ├── scene.js            # Canvas-perspective scene and forward projection
-│   ├── main.js             # UI, animation, export and sharing
-│   └── gif-worker.js       # GIF89a encoder in a Web Worker
-├── tests/
-│   ├── optics.test.mjs     # Numerical optics regression tests
-│   ├── project-state.test.mjs # Version/link roundtrip and input validation
-│   ├── browser-smoke.mjs   # Chromium + Firefox export and viewport tests
-│   ├── check-browser-exports.py # Pillow checks on actual browser-generated media
-│   └── validate-exports.py # Checks on bundled example media
-├── examples/               # Real application screenshots, GIFs and video
-├── docs/                   # Design notes and unpublished launch drafts
-└── flake.nix               # Optional Nix development shell
-```
-
-Run the dependency-free numerical suite with:
+The numerical and project suite has no third-party dependencies:
 
 ```bash
-node --test tests/optics.test.mjs
+node --test tests/*.test.mjs
 ```
 
-The six current tests cover the reflection law, known normals, forward-only intersections, inverse/forward consistency, invalid geometry and a recognizable asymmetric projection. The sample GIFs were independently decoded and checked for 30 frames and changing images. The image-validation script needs Pillow (`python3 -m pip install pillow` in an appropriate environment) and can be run with `python3 tests/validate-exports.py`.
+For browser QA, install the same runner as CI, then keep the local HTTP server running:
 
-### Known gaps before a public hosted launch
+```bash
+npm install --no-save playwright@1.56.0
+npx playwright install --with-deps chromium firefox
+node tests/browser-smoke.mjs
+node tests/mission05-browser.mjs
+node tests/mission06-browser.mjs
+node tests/mission07-browser.mjs
+node tests/mission08-browser.mjs
+```
 
-- Review the automated Firefox/Chromium test workflow results and any device-specific issues; an automated viewport test is not a real iOS/Android device test.
-- Revisit mobile gesture usability, keyboard/screen-reader controls, lower-end GPU/CPU performance and repeated export memory behavior.
-- Improve palette selection for larger GIFs and consider WebM as an additional output. MP4 and WebM **are not built-in export options** today.
-- Consider a physically richer shadowing/occlusion mode while keeping the existing optical model independently testable.
+Decode the downloaded media independently with Pillow:
 
-## Privacy and licensing
+```bash
+python3 -m pip install pillow
+python3 tests/check-browser-exports.py
+python3 tests/check-mission06-exports.py
+python3 tests/check-mission07-exports.py
+python3 tests/check-mission08-exports.py
+```
 
-No accounts. No analytics. No background uploads. Your typed words, drawings and exported frames are processed in your browser, and files are only shared if **you** take an explicit sharing action. See [Security and privacy](SECURITY.md).
+The [actual GitHub Actions workflow](.github/workflows/raymosaic-browser-qa.yml) runs these checks and retains exported media as artifacts. Mission 08 adds the complete Chromium/Firefox matrix for both rendering modes, three aspect ratios and all three mirror counts, plus signatures, complete message sequences, cancellation, localized UI, PNG and sharing. Rendering regressions verify that projection mode emits only forward light sprites on black, with no apparatus paths or text.
 
-Released under the [MIT License](LICENSE) (© 2026 Dennis Hilk). Contributions are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md). Example media was produced from this project.
+See [Mission 08 validation](docs/MISSION-08.md) for observed results and the before/after comparison. Example screenshots and GIFs are genuine application output; the [original 20-second demonstration](examples/raymosaic-20s-demo.mp4) predates the current UI.
 
----
+## Browser support and limits
 
-<div align="center">
+Chromium and Firefox are exercised by the automated browser suite. Core rendering uses Canvas 2D, ES modules and Web Workers. Creation links additionally need native compression APIs; native sharing depends on browser and operating-system support. No Safari or physical iOS verification is claimed by these desktop tests. Dennis has tried the app on his Android phone; automated phone-sized viewports are a separate check.
 
-*Make light draw.* 🌈
+This is an educational geometrical-optics model. It uses an ideal point light and perfect planar mirrors, finite facet footprints and stylized glow. It does not model diffraction, polarization, wavelength-dependent materials, inter-mirror occlusion, self-shadowing or global illumination. Emoji appearance depends on installed fonts. More mirrors and longer, higher-resolution GIFs cost additional CPU time and memory.
 
-**Created by Dennis Hilk / NEBU** · [dennishilk.com](https://dennishilk.com)
+## Source and contributions
 
-</div>
+| File | Responsibility |
+| --- | --- |
+| `src/optics.mjs` | Vectors, reflection, inverse solver, forward plane intersections |
+| `src/targets.js` | Creative input samples, used only to aim mirrors |
+| `src/scene.js` | Perspective apparatus and flat forward-light rendering |
+| `src/export-renderer.js` | Explicit GIF rendering modes and optical sequence frames |
+| `src/export-framing.mjs` | Shared framing from actual forward hits |
+| `src/gif-worker.js` | Local GIF89a encoding |
+| `src/message-sequence.mjs` | Unicode segmentation and complete export timelines |
+| `src/project-state.js` | Validated storage, files and compact creation links |
+| `src/main.js`, `src/i18n.js` | Interaction and English/German interface |
+
+Contributions, optical corrections and accessibility findings are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md). RAYMOSAIC and its generated example media are by Dennis Hilk. The source is licensed under the verified [MIT License](LICENSE), © 2026 Dennis Hilk.
